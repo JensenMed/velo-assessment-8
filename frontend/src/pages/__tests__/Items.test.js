@@ -6,15 +6,19 @@ import Items from '../Items';
 import { DataProvider } from '../../state/DataContext';
 
 // react-window needs a measurable size in JSDOM
-jest.mock('react-window', () => ({
-  FixedSizeList: ({ children, itemCount }) => (
-    <div data-testid="virtual-list">
-      {Array.from({ length: itemCount }).map((_, index) =>
-        children({ index, style: {} })
-      )}
-    </div>
-  ),
-}));
+jest.mock('react-window', () => {
+  const React = require('react');
+  return {
+    FixedSizeList: ({ children, itemCount }) =>
+      React.createElement(
+        'div',
+        { 'data-testid': 'virtual-list' },
+        Array.from({ length: itemCount }).map((_, index) =>
+          React.cloneElement(children({ index, style: {} }), { key: index })
+        )
+      ),
+  };
+});
 
 function mockFetchOnce(payload) {
   global.fetch = jest.fn(() =>
@@ -27,7 +31,9 @@ function mockFetchOnce(payload) {
 
 function renderItems() {
   return render(
-    <MemoryRouter>
+    <MemoryRouter
+  future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+>
       <DataProvider>
         <Items />
       </DataProvider>
